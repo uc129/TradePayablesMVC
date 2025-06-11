@@ -137,15 +137,15 @@ namespace TradePayablesMVC2017.Controllers
 
         // This POST action will receive the edited data
         [HttpPost]
-        public ActionResult SaveEditedData(List<EditInvoicesViewModel> editedOrders)
+        public ActionResult SaveEditedData(List<EditInvoicesViewModel> editedInvoices)
         {
-            if (editedOrders == null)
+            if (editedInvoices == null)
             {
                 return Json(new { success = false, message = "No data received." });
             }
 
             // --- IMPORTANT: Process only truly edited rows ---
-            var changedOrders = editedOrders.Where(o => o.IsEdited).ToList();
+            var changedInvoices = editedInvoices.Where(o => o.IsEdited).ToList();
 
             // In a real application, you would:
             // 1. Fetch the original data for these IDs from your database/source.
@@ -154,9 +154,9 @@ namespace TradePayablesMVC2017.Controllers
 
 
 
-            System.Diagnostics.Debug.WriteLine($"Received {editedOrders.Count} rows, {changedOrders.Count} were marked as edited.");
+            System.Diagnostics.Debug.WriteLine($"Received {editedInvoices.Count} rows, {changedInvoices.Count} were marked as edited.");
 
-            foreach (var order in changedOrders)
+            foreach (var order in changedInvoices)
             {
                 // Here you would typically update your database record
                 // For now, just print to console/debug output
@@ -170,7 +170,7 @@ namespace TradePayablesMVC2017.Controllers
             }
 
             // After processing, you might return a success message or updated data
-            return Json(new { success = true, message = $"{changedOrders.Count} rows processed successfully!" });
+            return Json(new { success = true, message = $"{changedInvoices.Count} rows processed successfully!" });
         }
 
 
