@@ -1,0 +1,103 @@
+﻿@model TradePayablesMVC2017.Models.ProcessedInvoicesListModel
+
+@{
+    ViewBag.Title = "ProcessedInvoices";
+}
+
+<h2>ProcessedInvoices</h2>
+<ul>
+    <li>@Html.ActionLink("Edit Data", "EditData", "Data")</li>
+</ul>
+
+<table id="processedInvoicesTable" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Purchasing Document</th>
+            <th>Document Header Text</th>
+            <th>Assignment</th>
+
+            <th>Vendor</th>
+            <th>Text</th>
+            <th>Industry</th>
+            <th>Payment Terms</th>
+
+            <th>Amount in Local</th>
+
+            <th>Document Date</th>
+            <th>Posting Date</th>
+            <th>Payment Date</th>
+            <th>Processed</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Invoices != null)
+        {
+            foreach (var item in Model.Invoices)
+            {
+                <tr data-row-id="@item.PurchasingDocument">
+                    @* Add a data-row-id attribute for tracking *@
+                    <td class="@((item.Processed != "" && item.Processed != "Processed from Text Column") ? "processed" : "")">
+                    @item.PurchasingDocument</td>
+                    <td>@item.DocumentHeaderText</td>
+                    <td>@item.Assignment</td>
+
+                    <td class="@((item.Processed == "Processed from Text Column") ? "processed" : "")">@item.Vendor</td>
+                    <td>@item.Text</td>
+                    <td>@item.Industry</td>
+                    <td>@item.PaymentTerms</td>
+
+                    <td>@item.AmountLocal</td>
+
+                    <td>@item.DocumentDate</td>
+                    <td>@item.PostingDate</td>
+                    <td>@item.PaymentDate</td>
+                    <td>@item.Processed</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@*<button id="saveChangesBtn" class="btn btn-primary" style="margin-top: 20px;">Save Changes</button>*@
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var table = $('#processedInvoicesTable').DataTable({
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                // Make certain columns editable
+                "columnDefs": [
+                    { "targets": [1, 2, 4, 5], "className": "" } // Make Vendor, Industry, Payment Terms, Doc Header Text editable
+                ]
+            });
+
+        });
+    </script>
+
+    <style>
+        .editable {
+            cursor: pointer;
+        }
+
+        .editable input {
+                width: 100%;
+                box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            }
+
+        .edited-row {
+            background-color: #ffffcc !important; /* Light yellow to indicate edited rows */
+        }
+
+        .processed{
+            background-color:burlywood;
+        }
+    </style>
+}

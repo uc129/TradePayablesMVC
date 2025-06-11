@@ -1,0 +1,186 @@
+﻿@model TradePayablesMVC2017.Models.EditInvoicesListModel
+
+@{
+    ViewBag.Title = "Edit Data";
+}
+
+<h2>Edit Data</h2>
+
+<table id="editInvoicesTable" class="none" style="width:100%; display:none">
+
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Purchasing Document</th>
+            <th>Document Header Text</th>
+            <th>Assignment</th>
+    
+            <th>Vendor</th>
+
+            <th>Text</th>
+            <th>Industry</th>
+            <th>Payment Terms</th>
+            <th>Is Edited?</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (Model != null && Model.Invoices != null)
+        {
+            foreach (var item in Model.Invoices)
+            {
+        <tr data-row-id="@item.id">
+            @* Add a data-row-id attribute for tracking *@
+            <td id="@item.id">@item.id</td>
+            <td id="@(item.id + item.PurchasingDocument)">@item.PurchasingDocument</td>
+            <td>@item.DocumentHeaderText</td>
+            <td>@item.Assignment</td>
+            <td id="@(item.id + item.Vendor)">@item.Vendor</td>
+            <td>@item.Text</td>
+            <td>@item.Industry</td>
+            <td>@item.PaymentTerms</td>
+            <td>@item.IsEdited</td>
+        </tr>
+            }
+        }
+    </tbody>
+</table>
+
+<button id="saveChangesBtn" class="btn btn-primary" style="margin-top: 20px;">Save Changes</button>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var table = $('#editInvoicesTable').DataTable({
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                
+                // Make certain columns editable
+                "columnDefs": [
+                    { "targets": [1, 4], "className": "editable" } // Make Vendor, Industry, Payment Terms, Doc Header Text editable
+                ]
+            });
+
+            $(document).ready(function () {
+                $('#editInvoicesTable').css("display","block")
+            })
+
+            // Implement simple inline editing (click to edit)
+            $('#editInvoicesTable tbody').on('click', 'td.editable', function () {
+                var cell = table.cell(this);
+                var originalValue = cell.data();
+                var $cell = $(this);
+
+                // Check if already in edit mode
+                if ($cell.find('input, select').length > 0) {
+                    return;
+                }
+
+                // Create an input field
+                var input = $('<input type="text" class="form-control" />')
+                    .val(originalValue)
+                    .on('blur', function () { // When input loses focus
+                        var newValue = $(this).val();
+                        if (newValue !== originalValue) {
+                            cell.data(newValue).draw(); // Update DataTables data
+                            // Mark the row as edited
+                            $cell.addClass('edited-row').closest('tr').attr('is-edited',true);
+                        }
+                        $cell.html(newValue); // Restore cell content
+                    })
+                    .on('keypress', function (e) {
+                        if (e.which === 13) { // On Enter key
+                            $(this).blur(); // Trigger blur to save
+                            if ($(this).val != originalValue) {
+                                console.log("edited", originalValue, $(this).val())
+                            }
+                        }
+                    });
+
+                $cell.html(input); // Replace cell content with input
+                input.focus(); // Focus the input for immediate editing
+            });
+
+
+            // Function to gather edited data
+            $('#saveChangesBtn').on('click', function () {
+                var editedData = [];
+                $('#editInvoicesTable tbody tr').each(function () {
+                    var $row = $(this);
+                    if ($row.attr('is-edited')=="true") { // Only process rows marked as edited
+                        var rowId = $row.data('row-id');
+                        var rowData = table.row($row).data(); // Get current data from DataTables
+
+                        // Map DataTables data array to your ViewModel properties
+                        editedData.push({
+                            Id: rowId,
+                            PurchasingDocument: rowData[1], // Assuming column index 1 is "Purchasing Document"
+                            Vendor: rowData[2],
+                            
+                            Text: rowData[3],
+                            Industry: rowData[4],
+                            PaymentTerms: rowData[5],
+                            DocumentHeaderText: rowData[6],
+                            
+                            IsEdited: true // Confirm it's edited
+                        });
+                    }
+                });
+
+                if (editedData.length === 0) {
+                    alert("No changes detected to save.");
+                    return;
+                }
+
+                // Send edited data to controller via AJAX
+                $.ajax({
+                    url: '@Url.Action("SaveEditedData", "Data")', // Replace Controller name if different
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(editedData),
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            // Optional: Refresh table or indicate success
+                            // table.rows('.edited-row').remove().draw(); // Remove highlight
+                            $('.edited-row').removeClass('edited-row');
+                            $('tr').attr("is-edited", false)
+                        } else {
+                            alert('Error saving data: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('AJAX error: ' + error);
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .editable {
+            cursor: pointer;
+        }
+
+        .none{
+            display:none;
+        }
+
+            .editable input {
+                width: 100%;
+                box-sizing: border-box; /* Include padding and border in the element's total width and height */
+                background-color:antiquewhite;
+            }
+
+        .edited-row {
+            background-color: #ffffcc !important; /* Light yellow to indicate edited rows */
+        }
+    </style>
+}
