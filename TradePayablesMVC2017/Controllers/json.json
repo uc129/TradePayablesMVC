@@ -1,0 +1,47 @@
+{
+
+  "0": {
+    "Assignment": "AI/3546/24-25-T",
+    "DocumentHeaderText": "8900000745",
+    "Industry": "3",
+    "InvoiceId": "14701_A/cs Payable__8900000745_AI/3546/24-25-T_AI/3546/24-25-T_60576_TDS ON INVOICE PROV- MAR-25_LOGISTIC INTEGRATORS (I) PVT LTD_2000_-30653.5_KR_2420753678_3_1045_210C001_Mar 28 2025 12:00AM_Mar 31 2025 12:00AM_May 12 2025 12:00AM_FBL1N_1",
+    "IsEdited": true,
+    "PaymentTerms": "1045",
+    "PurchasingDocument": "8900000745112",
+    "Text": "TDS ON INVOICE PROV- MAR-25",
+    "Vendor": "60576"
+  },
+
+    1: null,
+    "Assignment": "SI/1244/24-25-T",
+    "DocumentHeaderText": "8900000741",
+    "Industry": "3",
+    "InvoiceId": "14701_A/cs Payable__8900000741_SI/1244/24-25-T_SI/1244/24-25-T_60576_TDS ON INVOICE PROV- MAR-25_LOGISTIC INTEGRATORS (I) PVT LTD_2000_-101724_KR_2420753690_3_1045_210C001_Mar 28 2025 12:00AM_Mar 31 2025 12:00AM_May 12 2025 12:00AM_FBL1N_1",
+    "IsEdited": true,
+    "PaymentTerms": "1045",
+    "PurchasingDocument": "8900000741246",
+    "Text": "TDS ON INVOICE PROV- MAR-25",
+    "Vendor": "60576",
+
+    2: null,
+    "Assignment": "SI/1244/24-25-T",
+    "DocumentHeaderText": "8900000741",
+    "Industry": "3",
+    "InvoiceId": "14701_A/cs Payable__8900000741_SI/1244/24-25-T_SI/1244/24-25-T_60576_TDS ON INVOICE PROV- MAR-25_LOGISTIC INTEGRATORS (I) PVT LTD_2000_102648_KR_2420753690_3__210C001_Mar 28 2025 12:00AM_Mar 31 2025 12:00AM_Mar 28 2025 12:00AM_FBL1N_1",
+    "IsEdited": true,
+    "PaymentTerms": "",
+    "PurchasingDocument": "8900000741124",
+    "Text": "TDS ON INVOICE PROV- MAR-25",
+    "Vendor": "60576",
+
+    3: null,
+    "Assignment": "AI/3546/24-25-T",
+    "DocumentHeaderText": "8900000745",
+    "Industry": "3",
+    "InvoiceId": "14701_A/cs Payable__8900000745_AI/3546/24-25-T_AI/3546/24-25-T_60576_TDS ON INVOICE PROV- MAR-25_LOGISTIC INTEGRATORS (I) PVT LTD_2000_30931.5_KR_2420753678_3__210C001_Mar 28 2025 12:00AM_Mar 31 2025 12:00AM_Mar 28 2025 12:00AM_FBL1N_1",
+    "IsEdited": true,
+    "PaymentTerms": "",
+    "PurchasingDocument": "890000074500",
+    "Text": "TDS ON INVOICE PROV- MAR-25",
+    "Vendor": "60576"
+  }

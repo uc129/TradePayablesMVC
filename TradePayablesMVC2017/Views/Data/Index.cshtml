@@ -4,67 +4,98 @@
     ViewBag.Title = "View Raw Data";
 }
 
-<h2>Raw Data</h2>
+    <h2>Raw Data</h2>
 
 
-<table id="rawInvoicesTable" class="display" style="width:100%">
-    <thead>
-        <tr>
-            <th>Purchasing Document</th>
-            <th>Document Header Text</th>
-            <th>Assignment</th>
+    <table id="rawInvoicesTable"
+           class="table table-striped table-bordered table-hover table-responsive table-condensed"
+         
+           style="width:100%; display:none">
+        <thead class="table-dark">
+            <tr>
+                <th>GL Account</th>
+                <th>Company Code</th>
+                <th>Source</th>
+                <th>Purchasing Document</th>
+                <th>Document Header</th>
+                <th>Assignment</th>
+                <th>Invoice Reference</th>
+                <th>Document Type</th>
 
-            <th>Vendor</th>
-            <th>Text</th>
-            <th>Industry</th>
-            <th>Payment Terms</th>
+                <th>Vendor</th>
+                @*<th>Vendor Description</th>*@
+                <th>Text</th>
+                <th>Industry</th>
+                <th>Payment Terms</th>
 
-            <th>Amount in Local</th>
+                <th>Amount Local</th>
 
-            <th>Document Date</th>
-            <th>Posting Date</th>
-            <th>Payment Date</th>
+                <th>Document Date</th>
+                <th>Posting Date</th>
+                <th>Payment Date</th>
+
+                @*
+                    public string GLDescription { get; set; }
+                    public string DocumentNumber { get; set; }
+                    public string ProfitCenter { get; set; }
+                    public string Source { get; set; }
+                    public string InvoiceKey { get; set; }*@
 
 
-           
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model != null && Model.Invoices != null)
-        {
-            foreach (var item in Model.Invoices)
+
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Invoices != null)
             {
-        <tr data-row-id="@item.PurchasingDocument">
-            @* Add a data-row-id attribute for tracking *@
-            <td>@item.PurchasingDocument</td>
-            <td>@item.DocumentHeaderText</td>
-            <td>@item.Assignment</td>
+                foreach (var item in Model.Invoices)
+                {
+                    <tr data-row-id="@item.InvoiceKey">
+                        @* Add a data-row-id attribute for tracking *@
+                        <td>@item.GLAccount</td>
+                        <td>@item.CompanyCode</td>
+                        <td>@item.Source</td>
+                        <td>@item.PurchasingDocument</td>
+                        <td>@item.DocumentHeaderText</td>
+                        <td>@item.Assignment</td>
+                        <td>@item.InvoiceReference</td>
+                        <td>@item.DocumentType</td>
 
-            <td>@item.Vendor</td>
-            <td>@item.Text</td>
-            <td>@item.Industry</td>
-            <td>@item.PaymentTerms</td>
 
-            <td>@item.AmountLocal</td>
+                        <td>@item.Vendor</td>
+                        @*<td>@item.VendorDescription</td>*@
+                        <td>@item.InvoiceDescription</td>
+                        <td>@item.Industry.AsInt()</td>
+                        <td>@item.PaymentTerms</td>
 
-            <td>@item.DocumentDate</td>
-            <td>@item.PostingDate</td>
-            <td>@item.PaymentDate</td>
-        </tr>
+                        <td>@item.AmountLocal</td>
+
+                        <td>@item.DocumentDate</td>
+                        <td>@item.PostingDate</td>
+                        <td>@item.PaymentDate</td>
+                    </tr>
+                }
             }
-        }
-    </tbody>
-</table>
+        </tbody>
+    </table>
 
-@*<button id="saveChangesBtn" class="btn btn-primary" style="margin-top: 20px;">Save Changes</button>*@
 
 @section scripts {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
         $(document).ready(function () {
+
+            $('#rawInvoicesTable thead th').each(function () {
+                var title = $(this).text();
+                $(this).html('<div class="filter"> <p>' + title + '</p> <input  type="text"  placeholder ="Search"/> </div>');
+            });
+
+            // DataTable initialization
             var table = $('#rawInvoicesTable').DataTable({
                 "paging": true,
                 "searching": true,
@@ -76,21 +107,35 @@
                 ]
             });
 
+            table.columns().every(function () {
+                var that = this; // Store reference to the column API instance
+
+                $('input', this.header()).on('keyup change clear', function () {
+                    if (that.search() !== this.value) {
+                        that
+                            .search(this.value)
+                            .draw();
+                    }
+                });
+            });
+
         });
+        $(document).ready(function () {
+            $("#rawInvoicesTable").css("display", "block")
+        })
     </script>
 
     <style>
-        .editable {
-            cursor: pointer;
+        .processed {
+            background-color: burlywood;
         }
 
-            .editable input {
-                width: 100%;
-                box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        .filter {
+            max-width: 100px;
+        }
+
+            .filter > input {
+                width: clamp(80px, 100px, 120px); /* Example: min of 80px, preferred 100px, max of 120px */
             }
-
-        .edited-row {
-            background-color: #ffffcc !important; /* Light yellow to indicate edited rows */
-        }
     </style>
 }

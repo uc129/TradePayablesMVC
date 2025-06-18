@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Web.Mvc;
@@ -13,10 +14,21 @@ namespace TradePayablesMVC2017.Controllers
 
         public static DataSet RawResult = new DataSet();
         public static DataSet PoCreditRecords = new DataSet();
+        public static DataSet VendorRecords = new DataSet();
+
         public static DataTable RawData = new DataTable();
         public static DataTable processedData = new DataTable();
         public static DataTable filteredProcessedData = new DataTable();
+
         public static DataTable JoinedRawAndPOData = new DataTable();
+        public static DataTable JoinedPoDataAndVendor = new DataTable();
+
+        public static DataTable FixedCPData = new DataTable();
+        public static DataTable DataWithAgeing = new DataTable();
+        public static DataTable DatasWithHyp = new DataTable();
+
+
+        public static DateTime currentQuarter;
 
 
         public DataController()
@@ -32,11 +44,32 @@ namespace TradePayablesMVC2017.Controllers
 
             PoCreditRecords = DataModel.GetPOCreditPeriodRecords(); // get PO Credit Period Records
 
+            VendorRecords = DataModel.GetVendorRecords();
+
+
             if (PoCreditRecords != null && RawData != null)
             {
                 JoinedRawAndPOData = DataModel.JoinTablesRawAndPOCredit(RawData,PoCreditRecords.Tables[0]); //Join Processed Data with PO Credit Period Records
             }
 
+            if (JoinedRawAndPOData != null)
+            {
+                FixedCPData = DataModel.MSMECreditPeriodFix(JoinedRawAndPOData);
+            }
+
+            if (FixedCPData != null)
+            {
+                DateTime marchQuarter = new DateTime(2025,3,20);
+                DateTime last_day_current_quarter = DataModel.GetLastDateOfCurrentQuarter(marchQuarter);
+
+                currentQuarter = last_day_current_quarter;
+                DataWithAgeing = DataModel.AgeingCalculation(FixedCPData, last_day_current_quarter);
+            }
+
+            if(DataWithAgeing != null)
+            {
+                DatasWithHyp = DataModel.HyperionCodeClassification(DataWithAgeing);
+            }
 
         }
 
@@ -55,17 +88,28 @@ namespace TradePayablesMVC2017.Controllers
             {
                 rawInvoices.Add(new RawInvoicesViewModel
                 {
-                    PurchasingDocument = row["Purchasing Document"]?.ToString(),
-                    Vendor = row["Vendor"]?.ToString(),
-                    Text = row["Text"]?.ToString(),
-                    Industry = row["Industry"]?.ToString(),
-                    PaymentTerms = row["Payment terms"]?.ToString(),
-                    DocumentHeaderText = row["Document Header Text"]?.ToString(),
-                    AmountLocal = row["Amount_Local"]?.ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
+                    DocumentHeaderText = row["Document_Header"]?.ToString(),
                     Assignment = row["Assignment"]?.ToString(),
-                    DocumentDate = row["Document Date"].ToString(),
+                    InvoiceReference = row["Invoice_Reference"].ToString(),
+                    Source = row["SOURCE"].ToString(),
+                    Vendor = row["Vendor"]?.ToString(),
+                    VendorDescription = row["Vendor_Description"].ToString(),
+                    InvoiceDescription = row["Invoice_DEscription"]?.ToString(),
+                    DocumentType = row["Document_Type"]?.ToString(),
+                    Industry = row["Industry"]?.ToString(),
+                    PaymentTerms = row["Payment_Terms"]?.ToString(),
+                    AmountLocal = row["Amount_Local"]?.ToString(),
+                    DocumentDate = row["Document_Date"].ToString(),
                     PaymentDate = row["Payment_Date"].ToString(),
-                    PostingDate = row["Posting Date"].ToString(),
+                    PostingDate = row["Posting_Date"].ToString(),
+                    CompanyCode = row["Company_Code"].ToString(),
+                    DocumentNumber = row["Document_Number"].ToString(),
+                    GLAccount = row["GL_Account"].ToString(),
+                    GLDescription = row["GL_Description"].ToString(),
+                    ProfitCenter = row["Profit_Center"].ToString(),
+                    Edited = row["Edited"].ToString()
+
                 });
             }
 
@@ -88,19 +132,20 @@ namespace TradePayablesMVC2017.Controllers
             {
                 processedInvoices.Add(new ProcessedInvoicesViewModel
                 {
-                    PurchasingDocument = row["Purchasing Document"]?.ToString(),
+
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
                     Vendor = row["Vendor"]?.ToString(),
-                    Text = row["Text"]?.ToString(),
+                    InvoiceDescription = row["Invoice_DEscription"]?.ToString(),
                     Industry = row["Industry"]?.ToString(),
-                    PaymentTerms = row["Payment terms"]?.ToString(),
-                    DocumentHeaderText = row["Document Header Text"]?.ToString(),
+                    PaymentTerms = row["Payment_Terms"]?.ToString(),
+                    DocumentHeaderText = row["Document_Header"]?.ToString(),
                     AmountLocal = row["Amount_Local"]?.ToString(),
                     Assignment = row["Assignment"]?.ToString(),
-                    DocumentDate = row["Document Date"].ToString(),
+                    DocumentDate = row["Document_Date"].ToString(),
                     PaymentDate = row["Payment_Date"].ToString(),
-                    PostingDate = row["Posting Date"].ToString(),
-                    Processed = row["Processed"].ToString()
-
+                    PostingDate = row["Posting_Date"].ToString(),
+                    Processed = row["Processed"].ToString(),
+                    InvoiceKey = row["Invoice_Key"].ToString()
                 });
             }
 
@@ -112,22 +157,24 @@ namespace TradePayablesMVC2017.Controllers
         public ActionResult EditData()
         {
 
-            // Convert DataTable to List<PurchaseOrderViewModel>
             List<EditInvoicesViewModel> invoices = new List<EditInvoicesViewModel>();
             int idCounter = 1; // Assign a unique ID for each row for client-side tracking
             foreach (DataRow row in processedData.Rows)
             {
                 invoices.Add(new EditInvoicesViewModel
                 {
-                    id = idCounter++,
-                    PurchasingDocument = row["Purchasing Document"]?.ToString(),
+                    Id = idCounter++,
+                    InvoiceKey = row["Invoice_Key"].ToString(),
+                    DocumentType=row["Document_Type"].ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
+                    DocumentHeaderText = row["Document_Header"]?.ToString(),
+                    Assignment = row["Assignment"]?.ToString(),
                     Vendor = row["Vendor"]?.ToString(),
-                    Text = row["Text"]?.ToString(),
+                    InvoiceDescription = row["Invoice_Description"]?.ToString(),
+                    AmountLocal = row["Amount_Local"]?.ToString(),
                     Industry = row["Industry"]?.ToString(),
-                    PaymentTerms = row["Payment terms"]?.ToString(),
-                    DocumentHeaderText = row["Document Header Text"]?.ToString(),
-                    Assignment= row["Assignment"]?.ToString(),
-                    IsEdited = false // Initialize as not edited
+                    PaymentTerms = row["Payment_Terms"]?.ToString(),
+                    IsEdited = row["Edited"].ToString() 
                 });
             }
 
@@ -144,33 +191,21 @@ namespace TradePayablesMVC2017.Controllers
                 return Json(new { success = false, message = "No data received." });
             }
 
-            // --- IMPORTANT: Process only truly edited rows ---
-            var changedInvoices = editedInvoices.Where(o => o.IsEdited).ToList();
-
-            // In a real application, you would:
-            // 1. Fetch the original data for these IDs from your database/source.
-            // 2. Apply the changes from changedOrders to your underlying data store.
-            // 3. Perform any server-side validation.
+            //---IMPORTANT: Process only truly edited rows-- -
+            var changedInvoices = editedInvoices.Where(o => o.IsEdited == "True").ToList();
 
 
+            bool success =DataModel.UpdateDatabase(changedInvoices);
 
-            System.Diagnostics.Debug.WriteLine($"Received {editedInvoices.Count} rows, {changedInvoices.Count} were marked as edited.");
-
-            foreach (var order in changedInvoices)
+            if (success)
             {
-                // Here you would typically update your database record
-                // For now, just print to console/debug output
-                System.Diagnostics.Debug.WriteLine($"Saving edited row ID: {order.id}");
-                System.Diagnostics.Debug.WriteLine($"   Purchasing Document: {order.PurchasingDocument}");
-                System.Diagnostics.Debug.WriteLine($"   Vendor: {order.Vendor}");
-                System.Diagnostics.Debug.WriteLine($"   Payment Terms: {order.PaymentTerms}");
-                // ... and so on for other fields
-                // You might also perform server-side cleanup/defaulting here:
-                // order.Vendor = string.IsNullOrWhiteSpace(order.Vendor) ? "N/A" : order.Vendor;
+                return Json(new { success = true, message = $"{changedInvoices.Count} rows processed successfully!" });
+            }
+            else
+            {
+                return Json(new { success = false, message = $"Error processing changes!" });
             }
 
-            // After processing, you might return a success message or updated data
-            return Json(new { success = true, message = $"{changedInvoices.Count} rows processed successfully!" });
         }
 
 
@@ -183,29 +218,108 @@ namespace TradePayablesMVC2017.Controllers
             {
                 invoices.Add(new JoinedRawAndPOInvoicesViewModel
                 {
-                    PurchasingDocument = row["Purchasing Document"]?.ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
                     Vendor = row["Vendor"]?.ToString(),
                     Industry = row["Industry"]?.ToString(),
-                    PaymentTerms = row["Payment terms"]?.ToString(),
-                    AmountLocal = row["Amount Local"]?.ToString(),
-                    DocumentDate = row["Document Date"].ToString(),
-                    PaymentDate = row["Payment Date"].ToString(),
-                    PostingDate = row["Posting Date"].ToString(),
-                    CreditPeriod = row["Credit Period"].ToString()
+                    PaymentTerms = row["Payment_Terms"]?.ToString(),
+                    AmountLocal = row["Amount_Local"]?.ToString(),
+                    DocumentDate = row["Document_Date"].ToString(),
+                    PaymentDate = row["Payment_Date"].ToString(),
+                    PostingDate = row["Posting_Date"].ToString(),
+                    CreditPeriod = row["Credit_Period"].ToString(),
+                    InvoiceKey = row["Invoice_Key"].ToString()
                 });
             }
 
             var viewModel = new JoinedRawAndPOInvoicesListModel { Invoices = invoices };
             return View(viewModel);
+        }
 
 
 
+        public ActionResult FixedCPForMSME()
+        {
+            List<EditInvoicesViewModel> invoices = new List<EditInvoicesViewModel>();
+            foreach (DataRow row in FixedCPData.Rows)
+            {
+                invoices.Add(new EditInvoicesViewModel
+                {
+                    InvoiceKey = row["Invoice_Key"].ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
+                    Vendor = row["Vendor"]?.ToString(),
+                    Industry = row["Industry"]?.ToString(),
+                    AmountLocal = row["Amount_Local"].ToString(),
+                    PaymentTerms = row["Payment_Terms"].ToString(),
+                    CreditPeriod = row["Credit_Period"].ToString(),
+                    Processed = row["Processed"].ToString(),
+                    IsEdited = row["Edited"].ToString(),
+                    CPFixed = row["CP_FIxed"].ToString()
+                });
+            }
 
-            return View();
+            var viewModel = new EditInvoicesListModel { Invoices = invoices };
+            return View(viewModel);
+
         }
 
         
+        public ActionResult AgedData()
+        {
+            List<AgedInvoicesViewModel> invoices = new List<AgedInvoicesViewModel>();
+            foreach (DataRow row in DataWithAgeing.Rows)
+            {
+                invoices.Add(new AgedInvoicesViewModel
+                {
+                    InvoiceKey = row["Invoice_Key"].ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
+                    Vendor = row["Vendor"]?.ToString(),
+                    Industry = row["Industry"]?.ToString(),
+                    AmountLocal = row["Amount_Local"].ToString(),
+                    CreditPeriod = row["Credit_Period"].ToString(),
+                    PaymentDate = row["Payment_Date"].ToString(),
+                    PostingDate = row["Posting_Date"].ToString(),
+                    Ageing = row["Ageing"].ToString(),
+                    AgeingYears = row["Ageing_Years"].ToString(),
+                    AgeingGroup = row["Ageing_Group"].ToString()
+                });
+            }
 
+            var viewModel = new AgedInvoicesListModel { Invoices = invoices, CurrentQuarter=currentQuarter };
+            return View(viewModel);
+        }
 
+        public ActionResult InvoicesWithHypCode()
+        {
+            List<InvoicesWithHypCodeView> invoices = new List<InvoicesWithHypCodeView>();
+            foreach (DataRow row in DatasWithHyp.Rows)
+            {
+                invoices.Add(new InvoicesWithHypCodeView
+                {
+                    InvoiceKey = row["Invoice_Key"].ToString(),
+                    PurchasingDocument = row["Purchasing_Document"]?.ToString(),
+                    Vendor = row["Vendor"]?.ToString(),
+                    Industry = row["Industry"]?.ToString(),
+                    AmountLocal = row["Amount_Local"].ToString(),
+                    CreditPeriod = row["Credit_Period"].ToString(),
+                    PaymentDate = row["Payment_Date"].ToString(),
+                    PostingDate = row["Posting_Date"].ToString(),
+                    Ageing = row["Ageing"].ToString(),
+                    AgeingYears = row["Ageing_Years"].ToString(),
+                    AgeingGroup = row["Ageing_Group"].ToString(),
+                    GLAccount = row["GL_Account"].ToString(),
+                    GLDescription = row["GL_Description"].ToString(),
+                    CompanyCode = row["Company_Code"].ToString(),
+                    DocumentType = row["Document_Type"].ToString(),
+                    
+                    Hyperion_Code = row["Hyperion_Code"].ToString(),
+                    Hyp_Code_Description = row["Hyp_Code_Description"].ToString(),
+                    Due_Status = row["Due_Status"].ToString(),
+                    Billed_Status = row["Billed_Status"].ToString()
+                });
+            }
+
+            var viewModel = new InvoicesWithHypCodeListView { Invoices = invoices, CurrentQuarter = currentQuarter };
+            return View(viewModel);
+        }
     }
 }

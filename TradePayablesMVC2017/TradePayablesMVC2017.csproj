@@ -125,6 +125,8 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\DataRowExtensions.cs" />
+    <Compile Include="Models\GLHyperionMapper.cs" />
     <Compile Include="Models\InvoicesViewModel.cs" />
     <Compile Include="Models\DataTableExtensions.cs" />
     <Compile Include="Models\DataModel.cs" />
@@ -141,6 +143,7 @@
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Controllers\json.json" />
     <None Include="Scripts\jquery-3.3.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.3.1.js" />
     <Content Include="Scripts\jquery-3.3.1.min.js" />
@@ -170,9 +173,13 @@
     <Content Include="Views\Data\EditData.cshtml" />
     <Content Include="Views\Data\JoinedPOData.cshtml" />
     <Content Include="Views\Data\ProcessedInvoices.cshtml" />
+    <Content Include="Views\Data\FixedCPForMSME.cshtml" />
+    <Content Include="Views\Data\AgedData.cshtml" />
+    <Content Include="Views\Data\InvoicesWithHypCode.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Content\Images\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />

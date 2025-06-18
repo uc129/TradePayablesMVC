@@ -6,65 +6,90 @@
 
 <h2>Edit Data</h2>
 
-<table id="editInvoicesTable" class="none" style="width:100%; display:none">
+<div class="table-container">
+    <table id="editInvoicesTable" 
+           class="table table-striped table-bordered table-hover table-responsive table-condensed table-sm" 
+           style="width:100%; display:none">
 
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Purchasing Document</th>
-            <th>Document Header Text</th>
-            <th>Assignment</th>
-    
-            <th>Vendor</th>
+        <thead>
+            <tr>
+                <th>Purchasing Document</th>
+                <th>Document Header Text</th>
+                <th>Assignment</th>
+                <th>Document Type</th>
+                <th>Vendor</th>
+                <th>Text</th>
+                <th>Industry</th>
+                <th>Amount Local</th>
+                <th>Payment Terms</th>
+                <th>Is Edited?</th>
+            </tr>
+        </thead>
 
-            <th>Text</th>
-            <th>Industry</th>
-            <th>Payment Terms</th>
-            <th>Is Edited?</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @if (Model != null && Model.Invoices != null)
-        {
-            foreach (var item in Model.Invoices)
+        <tbody>
+            @if (Model != null && Model.Invoices != null)
             {
-        <tr data-row-id="@item.id">
-            @* Add a data-row-id attribute for tracking *@
-            <td id="@item.id">@item.id</td>
-            <td id="@(item.id + item.PurchasingDocument)">@item.PurchasingDocument</td>
-            <td>@item.DocumentHeaderText</td>
-            <td>@item.Assignment</td>
-            <td id="@(item.id + item.Vendor)">@item.Vendor</td>
-            <td>@item.Text</td>
-            <td>@item.Industry</td>
-            <td>@item.PaymentTerms</td>
-            <td>@item.IsEdited</td>
-        </tr>
+                foreach (var item in Model.Invoices)
+                {
+                    <tr data-row-id="@item.InvoiceKey">
+                        <td id="@(item.Id + item.PurchasingDocument)">@item.PurchasingDocument</td>
+                        <td>@item.DocumentHeaderText</td>
+                        <td>@item.Assignment</td>
+                        <td>@item.DocumentType</td>
+                        <td id="@(item.Id + item.Vendor)">@item.Vendor</td>
+                        <td>@item.InvoiceDescription</td>
+                        <td>@item.Industry</td>
+                        <td>@item.AmountLocal</td>
+                        <td>@item.PaymentTerms</td>
+                        <td id="@(item.Id+"isedited")">@item.IsEdited</td>
+                    </tr>
+                }
             }
-        }
-    </tbody>
-</table>
+        </tbody>
+    </table>
 
+</div>
 <button id="saveChangesBtn" class="btn btn-primary" style="margin-top: 20px;">Save Changes</button>
 
 @section scripts {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    @*<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>*@
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
         $(document).ready(function () {
+
+            $('#editInvoicesTable thead th').each(function () {
+                var title = $(this).text();
+                $(this).html('<div class="filter"> <p>' + title + '</p> <input  type="text"  placeholder ="Search"/> </div>');
+            });
+
+            // DataTable initialization
             var table = $('#editInvoicesTable').DataTable({
                 "paging": true,
                 "searching": true,
                 "ordering": true,
                 "info": true,
-                
                 // Make certain columns editable
                 "columnDefs": [
-                    { "targets": [1, 4], "className": "editable" } // Make Vendor, Industry, Payment Terms, Doc Header Text editable
+                    { "targets": [1, 2, 4, 5], "className": "" } // Make Vendor, Industry, Payment Terms, Doc Header Text editable
                 ]
+            });
+
+            table.columns().every(function () {
+                var that = this; // Store reference to the column API instance
+
+                $('input', this.header()).on('keyup change clear', function () {
+                    if (that.search() !== this.value) {
+                        that
+                            .search(this.value)
+                            .draw();
+                    }
+                });
             });
 
             $(document).ready(function () {
@@ -76,6 +101,11 @@
                 var cell = table.cell(this);
                 var originalValue = cell.data();
                 var $cell = $(this);
+                var rowId = $cell.closest('tr').attr('data-row-id')
+                var iseditedcellId =  "#"+rowId + "isedited"
+                console.log(iseditedcellId)
+
+                console.log("row id", rowId)
 
                 // Check if already in edit mode
                 if ($cell.find('input, select').length > 0) {
@@ -89,17 +119,17 @@
                         var newValue = $(this).val();
                         if (newValue !== originalValue) {
                             cell.data(newValue).draw(); // Update DataTables data
-                            // Mark the row as edited
-                            $cell.addClass('edited-row').closest('tr').attr('is-edited',true);
+                            $cell.addClass('edited-row').closest('tr').attr('is-edited', true);
+                            $(iseditedcellId).html = "True"
+                            console.log("edited", originalValue, $(this).val())
+                            $(iseditedcellId).html = "True"
+
                         }
                         $cell.html(newValue); // Restore cell content
                     })
                     .on('keypress', function (e) {
                         if (e.which === 13) { // On Enter key
                             $(this).blur(); // Trigger blur to save
-                            if ($(this).val != originalValue) {
-                                console.log("edited", originalValue, $(this).val())
-                            }
                         }
                     });
 
@@ -110,29 +140,29 @@
 
             // Function to gather edited data
             $('#saveChangesBtn').on('click', function () {
-                var editedData = [];
+                let editedData = [];
                 $('#editInvoicesTable tbody tr').each(function () {
-                    var $row = $(this);
+                    const $row = $(this);
                     if ($row.attr('is-edited')=="true") { // Only process rows marked as edited
-                        var rowId = $row.data('row-id');
-                        var rowData = table.row($row).data(); // Get current data from DataTables
+                        const invoiceId = $row.attr('data-row-id');
+                        console.log(invoiceId)
+                        let rowData = table.row($row).data(); // Get current data from DataTables
 
                         // Map DataTables data array to your ViewModel properties
                         editedData.push({
-                            Id: rowId,
-                            PurchasingDocument: rowData[1], // Assuming column index 1 is "Purchasing Document"
-                            Vendor: rowData[2],
-                            
-                            Text: rowData[3],
-                            Industry: rowData[4],
-                            PaymentTerms: rowData[5],
-                            DocumentHeaderText: rowData[6],
-                            
-                            IsEdited: true // Confirm it's edited
+                            InvoiceKey: invoiceId,
+                            PurchasingDocument: rowData[0], // Assuming column index 1 is "Purchasing Document"
+                            DocumentHeaderText: rowData[1],
+                            Assignment: rowData[2],
+                            Vendor: rowData[3],
+                            Text: rowData[4],
+                            Industry: rowData[5],
+                            PaymentTerms: rowData[6],
+                            IsEdited: "True" // Confirm it's edited
                         });
                     }
                 });
-
+                console.log("edited data", editedData)
                 if (editedData.length === 0) {
                     alert("No changes detected to save.");
                     return;
@@ -140,7 +170,7 @@
 
                 // Send edited data to controller via AJAX
                 $.ajax({
-                    url: '@Url.Action("SaveEditedData", "Data")', // Replace Controller name if different
+                    url: '@Url.Action("SaveEditedData", "Data")',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(editedData),
@@ -169,18 +199,22 @@
             cursor: pointer;
         }
 
-        .none{
-            display:none;
-        }
-
             .editable input {
                 width: 100%;
                 box-sizing: border-box; /* Include padding and border in the element's total width and height */
-                background-color:antiquewhite;
+                background-color: antiquewhite;
             }
 
         .edited-row {
             background-color: #ffffcc !important; /* Light yellow to indicate edited rows */
         }
+
+        .filter {
+            max-width: 100px;
+        }
+
+            .filter > input {
+                width: clamp(80px, 100px, 120px); /* Example: min of 80px, preferred 100px, max of 120px */
+            }
     </style>
 }
