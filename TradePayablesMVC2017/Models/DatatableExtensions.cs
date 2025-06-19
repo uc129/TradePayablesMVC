@@ -27,8 +27,6 @@ namespace TradePayablesMVC2017.Models
             return distinctRows;
         }
 
-
-
         // Extension method to get distinct rows based on specific columns
         public static DataTable GetDistinctRows(this DataTable dataTable, params string[] columnNamesToCompare)
         {
@@ -98,5 +96,28 @@ namespace TradePayablesMVC2017.Models
                 }
             }
         }
+
+
+        public static void PrintColumnNames(DataTable dataTable)
+        {
+            if (dataTable == null)
+            {
+                System.Diagnostics.Debug.WriteLine("The DataTable is null.");
+                return;
+            }
+
+            if (dataTable.Columns.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine("The DataTable has no columns defined.");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine("Column Names in the DataTable:");
+            foreach (DataColumn column in dataTable.Columns)
+            {
+                System.Diagnostics.Debug.WriteLine($"- {column.ColumnName}");
+            }
+        }
+
     }
 }

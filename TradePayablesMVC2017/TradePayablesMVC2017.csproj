@@ -125,6 +125,8 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\DataToDB.cs" />
+    <Compile Include="Models\ReportViewModel.cs" />
     <Compile Include="Models\DataRowExtensions.cs" />
     <Compile Include="Models\GLHyperionMapper.cs" />
     <Compile Include="Models\InvoicesViewModel.cs" />
@@ -171,11 +173,12 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Data\Index.cshtml" />
     <Content Include="Views\Data\EditData.cshtml" />
-    <Content Include="Views\Data\JoinedPOData.cshtml" />
+    <Content Include="Views\Data\JoinedData.cshtml" />
     <Content Include="Views\Data\ProcessedInvoices.cshtml" />
     <Content Include="Views\Data\FixedCPForMSME.cshtml" />
     <Content Include="Views\Data\AgedData.cshtml" />
     <Content Include="Views\Data\InvoicesWithHypCode.cshtml" />
+    <Content Include="Views\Data\MSMEReportView.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

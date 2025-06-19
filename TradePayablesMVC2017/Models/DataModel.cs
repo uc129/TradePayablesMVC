@@ -12,7 +12,6 @@ namespace TradePayablesMVC2017.Models
     public class DataModel
     {
         private static readonly string connString = "Data Source=LTEH-DB-U-01;Initial Catalog=BankGauranteeFandAUAT;Persist Security Info=True;User ID=BankGuarantee_UAT_read;Password=BankGuarantee@UAT8909";
-        private static readonly string po_data_connString = "Data Source=SQLAPP;Initial Catalog=Lnt_PO_Data;Persist Security Info=True;User ID=5quarter;Password=Lteh@2023";
         private static readonly string po_credit_connString = "Data Source=SQLAPP;Initial Catalog=LTHE_Invoice_Tracking;Persist Security Info=True;User ID=5quarter;Password=Lteh@2023";
         private static readonly string vendor_connString = "Data Source=SQLAPP;Initial Catalog=Lnt_PO_Data;Persist Security Info=True;User ID=5quarter;Password=Lteh@2023";
         public static Dictionary<int, string> AgeingGroup = new Dictionary<int, string>
@@ -23,10 +22,9 @@ namespace TradePayablesMVC2017.Models
                 { 4, "More than 3 year" }
             };
      
-
         public static DataSet GetRawRecords()
         {
-            string query = "SELECT DISTINCT * FROM [TradePayablesDataTable] WHERE GL_Account IS NOT NULL";
+            string query = "SELECT DISTINCT * FROM [TradePayablesDataTable] WHERE [Amount_Local] IS NOT NULL";
             DataSet raw_ds = new DataSet();
 
             try
@@ -59,110 +57,53 @@ namespace TradePayablesMVC2017.Models
 
         }
 
-        public static DataSet GetPORecords()
-        {
-            string po_query = "SELECT DISTINCT [ebeln],[lifnr] FROM [podata]";
-            DataSet po_ds = new DataSet();
-
-            try
-            {
-                // Establish a connection to the database
-
-
-                using (SqlConnection po_header_conection = new SqlConnection(po_data_connString))
-                {
-                    po_header_conection.Open();
-                    SqlDataAdapter po_da = new SqlDataAdapter(po_query, po_header_conection);
-                    po_da.Fill(po_ds);
-                }
-
-                if (po_ds.Tables.Count > 0 && po_ds.Tables[0].Rows.Count > 0)
-                {
-                    return po_ds;
-                }
-
-                else
-                    return null;
-
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("An error occurred: " + ex);
-                return null;
-            }
-
-        }
-
         public static DataSet GetPOCreditPeriodRecords()
         {
             string po_cp_query = "SELECT  [PurchasingDoc] ,MAX([CreditPeriod]) AS CreditPeriod FROM [Lnt_PO_Data].[dbo].[POTemsfromSAP] GROUP BY [PurchasingDoc]";
             DataSet po_cp_ds = new DataSet();
-
             try
             {
-                // Establish a connection to the database
-
-
                 using (SqlConnection po_cp_conection = new SqlConnection(po_credit_connString))
                 {
                     po_cp_conection.Open();
                     SqlDataAdapter po_da = new SqlDataAdapter(po_cp_query, po_cp_conection);
                     po_da.Fill(po_cp_ds);
                 }
-
                 if (po_cp_ds.Tables.Count > 0 && po_cp_ds.Tables[0].Rows.Count > 0)
-                {
                     return po_cp_ds;
-                }
-
                 else
                     return null;
-
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("An error occurred: " + ex);
                 throw ex;
-                //return null;
             }
-
         }
 
         public static DataSet GetVendorRecords()
         {
-            //string po_cp_query = "SELECT [pkc_vendor_code],[ZTERM],[industry_type] FROM [Lnt_PO_Data].[dbo].[m_Vendor]";
-            string vendor_query = "SELECT [pkc_vendor_code],MAX([ZTERM]),MAX([industry_type]) FROM [Lnt_PO_Data].[dbo].[m_Vendor] WHERE [pkc_vendor_code] ='43206' GROUP BY [pkc_vendor_code]";
-
+            string vendor_query = "SELECT [pkc_vendor_code], MIN([ZTERM]) AS ZTERM, MAX([industry_type]) AS industry_type FROM [Lnt_PO_Data].[dbo].[m_Vendor]  GROUP BY [pkc_vendor_code]";
             DataSet vendor_ds = new DataSet();
-
             try
             {
-                // Establish a connection to the database
-
-
-                using (SqlConnection vendor_conection = new SqlConnection(po_credit_connString))
+                using (SqlConnection vendor_conection = new SqlConnection(vendor_connString))
                 {
                     vendor_conection.Open();
-                    SqlDataAdapter po_da = new SqlDataAdapter(vendor_query, vendor_conection);
-                    po_da.Fill(vendor_ds);
+                    SqlDataAdapter vendor_da = new SqlDataAdapter(vendor_query, vendor_conection);
+                    vendor_da.Fill(vendor_ds);
                 }
 
                 if (vendor_ds.Tables.Count > 0 && vendor_ds.Tables[0].Rows.Count > 0)
-                {
                     return vendor_ds;
-                }
-
                 else
                     return null;
-
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("An error occurred: " + ex);
                 throw ex;
-                //return null;
             }
-
         }
 
         public static string ConvertDataTableToHTMLString(DataTable dt)
@@ -197,8 +138,7 @@ namespace TradePayablesMVC2017.Models
             return html.ToString();
         }
 
-
-       public static DataTable ProcessDataTable(DataTable myDataTable)
+        public static DataTable ProcessDataTable(DataTable myDataTable)
         {
             DataTable processedData;
             // 1. Process Vendor Column
@@ -392,7 +332,7 @@ namespace TradePayablesMVC2017.Models
                              Column6 = table1["Amount_Local"],
                              Column7 = table1["Industry"],
                              Column8 = table1["Payment_Terms"],
-                             Column9 = table2?["CreditPeriod"] ?? DBNull.Value,
+                             Column9 = (table2 != null) ? table2.Field<string>("CreditPeriod") : (object)DBNull.Value,
                              Column10 = table1["Invoice_Key"],
                              Column11 = table1["Processed"],
                              Column12 = table1["Edited"],
@@ -463,11 +403,12 @@ namespace TradePayablesMVC2017.Models
             else return null;
         }
 
-        public static DataTable JoinTablesPoCreditAndVendor(DataTable data, DataTable PoCredit)
+        public static DataTable JoinPoAndVendorRecords(DataTable po_table, DataTable vendor_table)
         {
-            var result = from table1 in data.AsEnumerable()
-                         join table2 in PoCredit.AsEnumerable()
-                         on table1["Purchasing_Document"] equals table2["PurchasingDoc"] into temp
+            
+            var result = from table1 in po_table.AsEnumerable()
+                         join table2 in vendor_table.AsEnumerable()
+                         on table1["Vendor"] equals table2["pkc_vendor_code"] into temp
                          from table2 in temp.DefaultIfEmpty()
                          select new
                          {
@@ -479,7 +420,7 @@ namespace TradePayablesMVC2017.Models
                              Column6 = table1["Amount_Local"],
                              Column7 = table1["Industry"],
                              Column8 = table1["Payment_Terms"],
-                             Column9 = table2?["CreditPeriod"] ?? DBNull.Value,
+                             Column9 = table1["Credit_Period"],
                              Column10 = table1["Invoice_Key"],
                              Column11 = table1["Processed"],
                              Column12 = table1["Edited"],
@@ -488,8 +429,11 @@ namespace TradePayablesMVC2017.Models
                              Column15 = table1["Company_Code"],
                              Column16 = table1["Document_Type"],
                              Column17 = table1["SOURCE"],
-                             Column18 = table1["Document_Number"]
-
+                             Column18 = table1["Document_Number"],
+                             //Column19 = table2["ZTERM"] ?? DBNull.Value,
+                             //Column20 = table2["industry_type"] ?? DBNull.Value,
+                             Column19 = (table2 != null) ? table2.Field<string>("ZTERM") : (object)DBNull.Value,
+                             Column20 = (table2 != null) ? table2.Field<string>("industry_type") : (object)DBNull.Value,
 
                          };
 
@@ -515,6 +459,8 @@ namespace TradePayablesMVC2017.Models
             joinedTable.Columns.Add("Document_Type", typeof(string));
             joinedTable.Columns.Add("SOURCE", typeof(string));
             joinedTable.Columns.Add("Document_Number", typeof(string));
+            joinedTable.Columns.Add("V_Credit_Period", typeof(string));
+            joinedTable.Columns.Add("V_Industry", typeof(string));
 
 
 
@@ -530,7 +476,7 @@ namespace TradePayablesMVC2017.Models
                     item.Column6,
                     item.Column7,
                     item.Column8,
-                    item.Column9 == DBNull.Value ? null : item.Column9,
+                    item.Column9,
                     item.Column10,
                     item.Column11,
                     item.Column12,
@@ -539,7 +485,9 @@ namespace TradePayablesMVC2017.Models
                     item.Column15,
                     item.Column16,
                     item.Column17,
-                    item.Column18
+                    item.Column18,
+                    item.Column19 ?? DBNull.Value,
+                    item.Column20 ?? DBNull.Value
                 );
             }
 
@@ -550,8 +498,54 @@ namespace TradePayablesMVC2017.Models
             else return null;
         }
 
+        public static DataTable MergeCPAndIndustryColumns(DataTable data)
+        {
+            data.Columns.Add("CP_Merged", typeof(string));
+            data.Columns.Add("Ind_Merged", typeof(string));
 
+            foreach (DataRow row in data.Rows)
+            {
+                string cp = row["Credit_Period"].ToString();
+                string pt = row["Payment_Terms"].ToString();
+                string v_cp = row["V_Credit_Period"].ToString();
+                string ind = row["Industry"].ToString();
+                string v_ind = row["V_Industry"].ToString();
 
+                if (string.IsNullOrEmpty(cp) && !string.IsNullOrEmpty(pt)
+                    && !string.IsNullOrWhiteSpace(pt) && pt != "NULL" && pt != "null" && pt != "Null")
+                {
+                    string lastTwoChars = (pt.Substring((pt.ToString().Length - 2)));
+
+                    if (lastTwoChars == "00")
+                        lastTwoChars = "0";
+                    cp = lastTwoChars;
+                    row["Credit_Period"] = lastTwoChars;
+                    row["CP_Merged"] = "true";
+                }
+                else if (string.IsNullOrEmpty(cp) && !string.IsNullOrEmpty(v_cp) && !string.IsNullOrWhiteSpace(v_cp))
+                {
+                    string lastTwoChars = (v_cp.Substring((v_cp.ToString().Length - 2)));
+
+                    if (lastTwoChars == "00")
+                        lastTwoChars = "0";
+
+                    cp = lastTwoChars;
+                    row["Credit_Period"] = lastTwoChars;
+                    row["CP_Merged"] = "true";
+                }
+                if (string.IsNullOrEmpty(ind) && !string.IsNullOrEmpty(v_ind))
+                {
+                    string extracted_ind;
+                    if (v_ind.Length > 1)
+                        extracted_ind = v_ind.Substring(v_ind.Length - 1); //only take the last character
+                    else extracted_ind = v_ind;
+
+                    row["Industry"] = extracted_ind;
+                    row["Ind_Merged"] = "true";
+                }
+            }
+            return data;
+        }
 
         public static bool UpdateDatabase(List<EditInvoicesViewModel> changedInvoices)
         {
@@ -663,37 +657,14 @@ namespace TradePayablesMVC2017.Models
                 string cp = row["Credit_Period"].ToString();
                 string ind = row["Industry"].ToString();
 
-                if (string.IsNullOrEmpty(cp) && !string.IsNullOrEmpty(pt) && pt != "NULL"){
-                    string lastTwoChars = (pt.Substring((pt.ToString().Length - 2)));
-
-                    if (lastTwoChars == "00")
-                        lastTwoChars= "0";
-
-                    cp = lastTwoChars;
-                    row["Credit_Period"] = lastTwoChars;
-                    row["CP_Fixed"] = "true";
-
-                }
-
                 if ((ind == "1" || ind == "2") && cp == "60")
                 {
                     row["Credit_Period"] = "45";
                     row["CP_Fixed"] = "true";
-                    //System.Diagnostics.Debug.WriteLine("CP changed to 45 for Industry", row["Industry"], "and CP", row["Credit_Period"]);
                 }
-
-                if ((ind == "1" || ind == "2") && pt == "1060")
-                {
-                    //row["Credit_Period"] = "45";
-                    row["CP_Fixed"] = "true";
-                    row["Payment_Terms"] = "1045";
-                    //System.Diagnostics.Debug.WriteLine("Payment Terms CHanged to 1045 for Industry", row["Industry"], "and Payment Terms", row["Payment_Terms"]);
-                }
-
             }
 
             return processedData;
-
         }
 
         public static DateTime? ParseDateOrNull(object dateValue, string format)
@@ -769,11 +740,7 @@ namespace TradePayablesMVC2017.Models
             fixedCPData.Columns.Add("Ageing_Years", typeof(string));
             fixedCPData.Columns.Add("Ageing_Group", typeof(string));
 
-          
-
-            System.Diagnostics.Debug.WriteLine("Columns", fixedCPData.Columns);
             string date_format = "dd/MM/yyyy";
-
             foreach (DataRow row in fixedCPData.Rows)
             {
                 int cp = 0;
@@ -811,7 +778,6 @@ namespace TradePayablesMVC2017.Models
                     row["Ageing_Group"] = ageing_group;
                 }
             }
-
             return fixedCPData;
         }
 
@@ -841,7 +807,6 @@ namespace TradePayablesMVC2017.Models
             return null;
         }
 
-
         public static DataTable HyperionCodeClassification (DataTable data)
         {
             data.Columns.Add("Hyperion_Code", typeof(string));
@@ -862,15 +827,17 @@ namespace TradePayablesMVC2017.Models
 
                 if (row["Industry"].ToString() == "1" || row["Industry"].ToString() == "2")
                 {
-                    row["Hyp_Code_Description"] = "MSMED";
 
                     if (int.Parse(row["Ageing"].ToString()) <= 45)
                     {
                         row["Hyperion_Code"] = "2D170100";
+                        row["Hyp_Code_Description"] = "Principal Amount payable to Micro and Small Enterprise";
+
                     }
                     else if(int.Parse(row["Ageing"].ToString()) > 45)
                     {
                         row["Hyperion_Code"] = "2D170200";
+                        row["Hyp_Code_Description"] = "Principal Amt payable to Micro& Small Enterprise exceeding 45 days credit period";
                     }
                 }
                 else
@@ -879,8 +846,71 @@ namespace TradePayablesMVC2017.Models
                 }
 
             }
+
+            bool tableSuccess =DataToDB.CreateOrOverwriteDataTable("TradePayablesData_Processed",data,connString);
+
+            if (tableSuccess)
+            {
+                DataToDB.SaveDataTableToSql(data, "TradePayablesData_Processed", connString);
+                System.Diagnostics.Debug.WriteLine("Data saved to TradePayablesData_Processed SQL table!!");
+            }
             
             return data;
+        }
+
+
+        public static DataTable MSMEData(DataTable originalTable)
+        {
+            var filteredRows = from row in originalTable.AsEnumerable()
+                               where row.Field<object>("Hyperion_Code").Equals("2D170100") || row.Field<object>("Hyperion_Code").Equals("2D170200")
+                               select row;
+
+                // Create a new DataTable from the filtered rows
+            if (filteredRows.Any())
+            {
+                DataTable MSMEData = filteredRows.CopyToDataTable();
+                //DataTableExtensions.PrintColumnNames(MSMEData);
+
+                return MSMEData;
+            }
+            else
+            {
+                // Return an empty DataTable with the same schema if no rows match
+                return originalTable.Clone();
+            }
+        }
+
+        public static DataTable GetMSMEReport(DataTable originalTable)
+        {
+            // 1. Group by Hyperion_Code and sum Amount_Local
+            var groupedResults = from row in originalTable.AsEnumerable()
+                                 group row by row.Field<string>("Hyperion_Code") into g
+                                 select new
+                                 {
+                                     HyperionCode = g.Key,
+                                     HyperionDescription = g.Max(r => r.Field<string>("Hyp_Code_Description") ?? ""),
+                                     SumAmount = g.Sum(r => r.Field<decimal>("Amount_Local"))
+                                 };
+
+            // Create a new DataTable for the pivoted results
+            DataTable pivotTable = new DataTable("PivotResults");
+            pivotTable.Columns.Add("Hyperion_Code", typeof(string));
+            pivotTable.Columns.Add("Hyp_Code_Description", typeof(string));
+            pivotTable.Columns.Add("Sum_Amount_Local", typeof(decimal));
+
+            // Populate the pivot table with grouped results
+            foreach (var item in groupedResults.OrderBy(x => x.HyperionCode)) // Optional: Order by Hyperion Code
+            {
+                pivotTable.Rows.Add(item.HyperionCode, item.HyperionDescription, item.SumAmount);
+            }
+
+            // 2. Calculate the Grand Total
+            decimal grandTotal = originalTable.AsEnumerable().Sum(row => row.Field<decimal>("Amount_Local"));
+
+            // Add the Grand Total row
+            pivotTable.Rows.Add("Grand Total", grandTotal);
+
+            return pivotTable;
         }
 
     }

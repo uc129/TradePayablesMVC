@@ -22,7 +22,7 @@ namespace TradePayablesMVC2017.Models
                 string columnValue = row[columnName].ToString();
                 if (string.IsNullOrEmpty(columnValue) || string.IsNullOrWhiteSpace(columnValue) || columnValue == "null")
                 {
-                    row[columnName] = "NULL";
+                    row[columnName] = "null";
                 }
             }
             else

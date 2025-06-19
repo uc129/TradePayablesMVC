@@ -13,6 +13,11 @@
 
         <thead>
             <tr>
+                <th>Source</th>
+                <th>GL Account</th>
+                <th>GL Description</th>
+                <th>Company Code</th>
+                <th>Document Number</th>
                 <th>Purchasing Document</th>
                 <th>Document Header Text</th>
                 <th>Assignment</th>
@@ -22,7 +27,9 @@
                 <th>Industry</th>
                 <th>Amount Local</th>
                 <th>Payment Terms</th>
+                <th>Processed</th>
                 <th>Is Edited?</th>
+
             </tr>
         </thead>
 
@@ -31,18 +38,24 @@
             {
                 foreach (var item in Model.Invoices)
                 {
-                    <tr data-row-id="@item.InvoiceKey">
-                        <td id="@(item.Id + item.PurchasingDocument)">@item.PurchasingDocument</td>
-                        <td>@item.DocumentHeaderText</td>
-                        <td>@item.Assignment</td>
-                        <td>@item.DocumentType</td>
-                        <td id="@(item.Id + item.Vendor)">@item.Vendor</td>
-                        <td>@item.InvoiceDescription</td>
-                        <td>@item.Industry</td>
-                        <td>@item.AmountLocal</td>
-                        <td>@item.PaymentTerms</td>
-                        <td id="@(item.Id+"isedited")">@item.IsEdited</td>
-                    </tr>
+            <tr data-row-id="@item.InvoiceKey">
+                <td>@item.Source</td>
+                <td>@item.GLAccount</td>
+                <td class="long-text-cell">@item.GLDescription</td>
+                <td>@item.CompanyCode</td>
+                <td>@item.DocumentNumber</td>
+                <td id="@(item.Id + item.PurchasingDocument)">@item.PurchasingDocument</td> @* cell no: 5*@
+                <td class="long-text-cell">@item.DocumentHeaderText</td>
+                <td class="long-text-cell">@item.Assignment</td>
+                <td>@item.DocumentType</td>
+                <td id="@(item.Id + item.Vendor)">@item.Vendor</td>   @* cell no: 9*@
+                <td class="long-text-cell">@item.InvoiceDescription</td>
+                <td>@item.Industry</td>
+                <td>@item.AmountLocal</td>
+                <td>@item.PaymentTerms</td>
+                <td class="long-text-cell">@item.Processed</td>
+                <td id="@(item.Id+"isedited")">@item.IsEdited</td>
+            </tr>
                 }
             }
         </tbody>
@@ -76,7 +89,7 @@
                 "info": true,
                 // Make certain columns editable
                 "columnDefs": [
-                    { "targets": [1, 2, 4, 5], "className": "" } // Make Vendor, Industry, Payment Terms, Doc Header Text editable
+                    { "targets": [5,9], "className": "editable" } // Make Vendor, Purcahsing_Doc
                 ]
             });
 
@@ -102,10 +115,10 @@
                 var originalValue = cell.data();
                 var $cell = $(this);
                 var rowId = $cell.closest('tr').attr('data-row-id')
-                var iseditedcellId =  "#"+rowId + "isedited"
-                console.log(iseditedcellId)
+                //var iseditedcellId =  "#"+rowId + "isedited"
+                //console.log(iseditedcellId)
 
-                console.log("row id", rowId)
+                //console.log("row id", rowId)
 
                 // Check if already in edit mode
                 if ($cell.find('input, select').length > 0) {
@@ -120,9 +133,9 @@
                         if (newValue !== originalValue) {
                             cell.data(newValue).draw(); // Update DataTables data
                             $cell.addClass('edited-row').closest('tr').attr('is-edited', true);
-                            $(iseditedcellId).html = "True"
+                            //$(iseditedcellId).html = "true"
                             console.log("edited", originalValue, $(this).val())
-                            $(iseditedcellId).html = "True"
+                            //$(iseditedcellId).html = "true"
 
                         }
                         $cell.html(newValue); // Restore cell content
@@ -213,7 +226,7 @@
             max-width: 100px;
         }
 
-            .filter > input {
+      .filter > input {
                 width: clamp(80px, 100px, 120px); /* Example: min of 80px, preferred 100px, max of 120px */
             }
     </style>

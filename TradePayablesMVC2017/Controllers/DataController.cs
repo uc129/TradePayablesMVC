@@ -16,17 +16,19 @@ namespace TradePayablesMVC2017.Controllers
         public static DataSet PoCreditRecords = new DataSet();
         public static DataSet VendorRecords = new DataSet();
 
-        public static DataTable RawData = new DataTable();
-        public static DataTable processedData = new DataTable();
-        public static DataTable filteredProcessedData = new DataTable();
+        public static DataTable RawData = new DataTable("Raw Data from TradePayables Table");
+        public static DataTable processedData = new DataTable("Raw Data Processed to fill PO and Vendor Columns");
+        //public static DataTable filteredProcessedData = new DataTable();
 
-        public static DataTable JoinedRawAndPOData = new DataTable();
-        public static DataTable JoinedPoDataAndVendor = new DataTable();
+        public static DataTable JoinedRawAndPOData = new DataTable("Data joined with POTemsfromSAP");
+        public static DataTable JoinedPoDataAndVendor = new DataTable("Data joined with m_Vendor Table");
 
-        public static DataTable FixedCPData = new DataTable();
-        public static DataTable DataWithAgeing = new DataTable();
-        public static DataTable DatasWithHyp = new DataTable();
+        public static DataTable FixedCPData = new DataTable("Data with CreditPeriod/PaymentTerms Fixed");
+        public static DataTable DataWithAgeing = new DataTable("Data with Aeging Calculated");
+        public static DataTable DataWithHyp = new DataTable("Data With Hyperion Codes");
 
+        public static DataTable MSMEData = new DataTable("MSME Data");
+        public static DataTable MSMEReport = new DataTable("MSME Report");
 
         public static DateTime currentQuarter;
 
@@ -49,12 +51,18 @@ namespace TradePayablesMVC2017.Controllers
 
             if (PoCreditRecords != null && RawData != null)
             {
-                JoinedRawAndPOData = DataModel.JoinTablesRawAndPOCredit(RawData,PoCreditRecords.Tables[0]); //Join Processed Data with PO Credit Period Records
+                JoinedRawAndPOData = DataModel.JoinTablesRawAndPOCredit(processedData,PoCreditRecords.Tables[0]); //Join Processed Data with PO Credit Period Records
             }
 
-            if (JoinedRawAndPOData != null)
+            if (JoinedRawAndPOData != null && VendorRecords.Tables[0] != null)
             {
-                FixedCPData = DataModel.MSMECreditPeriodFix(JoinedRawAndPOData);
+                JoinedPoDataAndVendor = DataModel.JoinPoAndVendorRecords(JoinedRawAndPOData, VendorRecords.Tables[0]);
+                JoinedPoDataAndVendor = DataModel.MergeCPAndIndustryColumns(JoinedPoDataAndVendor);
+            }
+
+            if (JoinedPoDataAndVendor != null)
+            {
+                FixedCPData = DataModel.MSMECreditPeriodFix(JoinedPoDataAndVendor);
             }
 
             if (FixedCPData != null)
@@ -68,7 +76,13 @@ namespace TradePayablesMVC2017.Controllers
 
             if(DataWithAgeing != null)
             {
-                DatasWithHyp = DataModel.HyperionCodeClassification(DataWithAgeing);
+                DataWithHyp = DataModel.HyperionCodeClassification(DataWithAgeing);
+            }
+
+            if (DataWithHyp != null)
+            {
+                MSMEData = DataModel.MSMEData(DataWithHyp);
+                MSMEReport = DataModel.GetMSMEReport(MSMEData);
             }
 
         }
@@ -174,7 +188,14 @@ namespace TradePayablesMVC2017.Controllers
                     AmountLocal = row["Amount_Local"]?.ToString(),
                     Industry = row["Industry"]?.ToString(),
                     PaymentTerms = row["Payment_Terms"]?.ToString(),
-                    IsEdited = row["Edited"].ToString() 
+                    IsEdited = row["Edited"].ToString() ,
+                    GLAccount = row["GL_Account"].ToString(),
+                    GLDescription = row["GL_Description"].ToString(),
+                    CompanyCode = row["Company_Code"].ToString(),
+                    Processed = row["Processed"].ToString(),
+                    Source = row["SOURCE"].ToString(),
+                    DocumentNumber = row["Document_Number"].ToString(),
+                    
                 });
             }
 
@@ -210,13 +231,13 @@ namespace TradePayablesMVC2017.Controllers
 
 
         //GET Data/JoinedPOData
-        public ActionResult JoinedPOData()
+        public ActionResult JoinedData()
         {
             // Convert DataTable to List<PurchaseOrderViewModel>
-            List<JoinedRawAndPOInvoicesViewModel> invoices = new List<JoinedRawAndPOInvoicesViewModel>();
-            foreach (DataRow row in JoinedRawAndPOData.Rows)
+            List<JoinedDataViewModel> invoices = new List<JoinedDataViewModel>();
+            foreach (DataRow row in JoinedPoDataAndVendor.Rows)
             {
-                invoices.Add(new JoinedRawAndPOInvoicesViewModel
+                invoices.Add(new JoinedDataViewModel
                 {
                     PurchasingDocument = row["Purchasing_Document"]?.ToString(),
                     Vendor = row["Vendor"]?.ToString(),
@@ -227,22 +248,24 @@ namespace TradePayablesMVC2017.Controllers
                     PaymentDate = row["Payment_Date"].ToString(),
                     PostingDate = row["Posting_Date"].ToString(),
                     CreditPeriod = row["Credit_Period"].ToString(),
-                    InvoiceKey = row["Invoice_Key"].ToString()
+                    InvoiceKey = row["Invoice_Key"].ToString(),
+                    V_Credit_Period = row["V_Credit_Period"].ToString(),
+                    V_Industry = row["V_Industry"].ToString(),
+                    CP_Merged =row["CP_Merged"].ToString(),
+                    Ind_Merged = row["Ind_Merged"].ToString()
                 });
             }
 
-            var viewModel = new JoinedRawAndPOInvoicesListModel { Invoices = invoices };
+            var viewModel = new JoinedDataListModel { Invoices = invoices };
             return View(viewModel);
         }
 
-
-
         public ActionResult FixedCPForMSME()
         {
-            List<EditInvoicesViewModel> invoices = new List<EditInvoicesViewModel>();
+            List<JoinedDataViewModel> invoices = new List<JoinedDataViewModel>();
             foreach (DataRow row in FixedCPData.Rows)
             {
-                invoices.Add(new EditInvoicesViewModel
+                invoices.Add(new JoinedDataViewModel
                 {
                     InvoiceKey = row["Invoice_Key"].ToString(),
                     PurchasingDocument = row["Purchasing_Document"]?.ToString(),
@@ -257,12 +280,11 @@ namespace TradePayablesMVC2017.Controllers
                 });
             }
 
-            var viewModel = new EditInvoicesListModel { Invoices = invoices };
+            var viewModel = new JoinedDataListModel { Invoices = invoices };
             return View(viewModel);
 
         }
 
-        
         public ActionResult AgedData()
         {
             List<AgedInvoicesViewModel> invoices = new List<AgedInvoicesViewModel>();
@@ -291,7 +313,7 @@ namespace TradePayablesMVC2017.Controllers
         public ActionResult InvoicesWithHypCode()
         {
             List<InvoicesWithHypCodeView> invoices = new List<InvoicesWithHypCodeView>();
-            foreach (DataRow row in DatasWithHyp.Rows)
+            foreach (DataRow row in DataWithHyp.Rows)
             {
                 invoices.Add(new InvoicesWithHypCodeView
                 {
@@ -319,6 +341,23 @@ namespace TradePayablesMVC2017.Controllers
             }
 
             var viewModel = new InvoicesWithHypCodeListView { Invoices = invoices, CurrentQuarter = currentQuarter };
+            return View(viewModel);
+        }
+
+        public ActionResult MSMEReportView()
+        {
+            List<MSMEReportView> report = new List<MSMEReportView>();
+            foreach (DataRow row in MSMEReport.Rows)
+            {
+                report.Add(new MSMEReportView
+                {
+                    Hyperion_Code = row["Hyperion_Code"].ToString(),
+                    Hyp_Code_Description = row["Hyp_Code_Description"].ToString(),
+                    Total_Amount = row["Sum_Amount_Local"].ToString()
+                });
+            }
+
+            var viewModel = new MSMEReportListView { Report = report, CurrentQuarter = currentQuarter };
             return View(viewModel);
         }
     }

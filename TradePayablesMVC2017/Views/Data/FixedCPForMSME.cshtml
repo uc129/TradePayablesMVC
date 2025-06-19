@@ -1,4 +1,4 @@
-﻿@model TradePayablesMVC2017.Models.EditInvoicesListModel
+﻿@model TradePayablesMVC2017.Models.JoinedDataListModel
 
 @{
     ViewBag.Title = "Invoices Fixed Payment Terms";
@@ -32,7 +32,7 @@
                         <td> @item.PurchasingDocument </td>
                         <td>@item.Vendor</td>
                         <td>@item.Industry</td>
-                        <td class="@((item.CPFixed == "true") ? "processed" : "")">@item.PaymentTerms</td>
+                        <td>@item.PaymentTerms</td>
                         <td class="@((item.CPFixed == "true") ? "processed" : "")">@item.CreditPeriod</td>
                         <td>@item.AmountLocal</td>
                         <td style="font-size:smaller">@(item.Processed.Length>15? item.Processed.Substring(15) : item.Processed)</td>

@@ -1,14 +1,14 @@
-﻿@model TradePayablesMVC2017.Models.JoinedRawAndPOInvoicesListModel
+﻿@model TradePayablesMVC2017.Models.JoinedDataListModel
 
 @{
-    ViewBag.Title = "JoinedPOData";
+    ViewBag.Title = "JoinedData";
 }
 
 <h2>Joined PO Data</h2>
 
 <div class="">
 
-    <table id="joinedPOInvoicesTable" 
+    <table id="joinedInvoicesTable" 
            class="table table-striped table-bordered table-hover table-responsive table-condensed" 
            style="width:100%; display:none">
 
@@ -16,13 +16,21 @@
             <tr>
                 <th>Purchasing Document</th>
                 <th>Vendor</th>
+
                 <th>Industry</th>
-                <th>Payment Terms</th>
+                <th>V_Industry</th>
+
                 <th>Amount in Local</th>
                 <th>Document Date</th>
                 <th>Posting Date</th>
                 <th>Payment Date</th>
+
+                <th>Payment Terms</th>
                 <th>Credit Period</th>
+                <th>V_Credit Period</th>
+
+                <th>CP Merged?</th>
+                <th>Industry Merged?</th>
             </tr>
         </thead>
 
@@ -31,18 +39,22 @@
             {
                 foreach (var item in Model.Invoices)
                 {
-                    <tr data-row-id="@item.PurchasingDocument">
-                        <td>@item.PurchasingDocument</td>
-
-                        <td>@item.Vendor</td>
-                        <td>@item.Industry</td>
-                        <td>@item.PaymentTerms</td>
-                        <td>@item.AmountLocal</td>
-                        <td>@item.DocumentDate</td>
-                        <td>@item.PostingDate</td>
-                        <td>@item.PaymentDate</td>
-                        <td>@item.CreditPeriod</td>
-                    </tr>
+            <tr data-row-id="@item.InvoiceKey">
+                    <td>@item.PurchasingDocument</td>
+                    <td>@item.Vendor</td>
+                    <td class="@(item.Ind_Merged =="true"?"processed":"")">@item.Industry</td>
+                    <td>@item.V_Industry</td>
+                    <td>@item.AmountLocal</td>
+                    <td>@item.DocumentDate</td>
+                    <td>@item.PostingDate</td>
+                    <td>@item.PaymentDate</td>
+                    <td>@item.PaymentTerms</td>
+                    <td class="@(item.CP_Merged =="true"?"processed":"")">@item.CreditPeriod</td>
+                    <td>@item.V_Credit_Period</td>
+                    <td>@item.CP_Merged</td>
+                    <td>@item.Ind_Merged</td>
+                
+                </tr>
                 }
             }
         </tbody>
@@ -59,13 +71,13 @@
         <script>
             $(document).ready(function () {
 
-                $('#joinedPOInvoicesTable thead th').each(function () {
+                $('#joinedInvoicesTable thead th').each(function () {
                     var title = $(this).text();
                     $(this).html('<div class="filter"> <p>' + title + '</p> <input  type="text"  placeholder ="Search"/> </div>');
                 });
 
                 // DataTable initialization
-                var table = $('#joinedPOInvoicesTable').DataTable({
+                var table = $('#joinedInvoicesTable').DataTable({
                     "paging": true,
                     "searching": true,
                     "ordering": true,
@@ -91,7 +103,7 @@
             });
 
             $(document).ready(function () {
-                $("#joinedPOInvoicesTable").css("display", "block")
+                $("#joinedInvoicesTable").css("display", "block")
             })
         </script>
 

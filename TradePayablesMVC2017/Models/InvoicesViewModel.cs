@@ -58,9 +58,7 @@ namespace TradePayablesMVC2017.Models
     public class EditInvoicesViewModel :ProcessedInvoicesViewModel
     {
         public int Id { get; set; } // A unique ID is crucial for identifying rows for editing
-        public string CreditPeriod { get; set; }
         public string IsEdited { get; set; }
-        public string CPFixed { get; set; }
 
 
     }
@@ -73,16 +71,25 @@ namespace TradePayablesMVC2017.Models
     /// <summary>
     /// Display Invoices joined for CreditPeriod using PO
     /// </summary>
-    public class JoinedRawAndPOInvoicesViewModel : EditInvoicesViewModel 
+    public class JoinedDataViewModel : EditInvoicesViewModel 
     {
+        public string CreditPeriod { get; set; }
+        public string CPFixed { get; set; }
+        public string V_Credit_Period { get; set; }
+        public string V_Industry { get; set; }
+        public string CP_Merged { get; set; }
+        public string Ind_Merged { get; set; }
+
+
+
     }
-    public class JoinedRawAndPOInvoicesListModel
+    public class JoinedDataListModel
     {
-        public List<JoinedRawAndPOInvoicesViewModel> Invoices { get; set; }
+        public List<JoinedDataViewModel> Invoices { get; set; }
     }
 
 
-    public class AgedInvoicesViewModel: EditInvoicesViewModel
+    public class AgedInvoicesViewModel: JoinedDataViewModel
     {
         public string Ageing { get; set; }
         public string AgeingYears { get; set; }
